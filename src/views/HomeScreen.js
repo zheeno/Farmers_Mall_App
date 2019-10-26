@@ -1,7 +1,7 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import getTheme from '../../native-base-theme/components';
 import material from '../../native-base-theme/variables/material';
-import {StackActions, NavigationActions} from 'react-navigation';
+import { StackActions, NavigationActions } from 'react-navigation';
 import {
   StyleProvider,
   Container,
@@ -29,9 +29,11 @@ import {
   AsyncStorage,
   RefreshControl,
 } from 'react-native';
-import {styles} from '../../native-base-theme/variables/Styles';
-import {GetData, ShowToast} from '../services/ApiCaller';
-import {LoaderOverlay} from './components/MiscComponents';
+import { styles } from '../../native-base-theme/variables/Styles';
+import { GetData, ShowToast } from '../services/ApiCaller';
+import { LoaderOverlay } from './components/MiscComponents';
+import axios from 'axios';
+
 
 export default class HomeScreen extends Component {
   constructor(props) {
@@ -69,19 +71,19 @@ export default class HomeScreen extends Component {
   componentDidMount() {
     StackActions.reset({
       index: 0,
-      actions: [NavigationActions.navigate({routeName: 'Home'})],
+      actions: [NavigationActions.navigate({ routeName: 'Home' })],
     });
     // AsyncStorage.removeItem("cartToken");
     this.initializePage(true);
   }
 
   async initializePage(showLoader) {
-    this.setState({fetching: showLoader, refreshControl: !showLoader});
+    this.setState({ fetching: showLoader, refreshControl: !showLoader });
     AsyncStorage.getItem('userId')
       .then(userId => {
-        GetData('/browse?user_id=' + userId)
-          .then(result => {
-            let response = result;
+        axios.get('/browse?user_id=' + userId)
+          .then(response => {
+            // let response = result;
             this.setState({
               fetching: false,
               refreshControl: false,
@@ -90,6 +92,7 @@ export default class HomeScreen extends Component {
               categories: response.categories,
               handPicked: response.handPicked,
             });
+            // console.log(response.data);
           })
           .catch(error => {
             this.setState({
@@ -99,190 +102,191 @@ export default class HomeScreen extends Component {
               ajaxCallError: error.message,
             });
             ShowToast(error.message, 'danger');
+            console.log(error);
           });
       })
       .done();
   }
 
   render() {
-    const {navigate} = this.props.navigation;
+    const { navigate } = this.props.navigation;
 
     return (
-      <StyleProvider style={getTheme(material)}>
-        <Container style={{flex: 1}}>
+      <StyleProvider style={getTheme(material)} >
+        <Container style={{ flex: 1 }}>
           <View>
             <ImageBackground
               source={require('../assets/img/close_up_green_leaf.jpg')}
-              style={{width: '100%', height: '100%'}}>
+              style={{ width: '100%', height: '100%' }}>
               {this.state.fetching ? (
                 <LoaderOverlay text={"We're preparing your screen..."} />
               ) : (
-                <ScrollView
-                  style={[{flex: 1}, styles.bgLeafGreenSlight]}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={this.state.refreshControl}
-                      onRefresh={() => this.initializePage(false)}
-                    />
-                  }>
-                  <View
-                    style={[
-                      {
-                        flex: 1,
-                        paddingVertical: 20,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      },
-                    ]}>
-                    <Text style={[styles.introHeader_2, styles.centerText]}>
-                      Browse
-                    </Text>
-                    <Text note style={{color: '#FFF'}}>
-                      Find the best quality food items
-                    </Text>
+                  <ScrollView
+                    style={[{ flex: 1 }, styles.bgLeafGreenSlight]}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={this.state.refreshControl}
+                        onRefresh={() => this.initializePage(false)}
+                      />
+                    }>
                     <View
-                      style={{
-                        flexDirection: 'row',
-                        backgroundColor: 'rgba(255, 255, 255, 0.45)',
-                        width: '90%',
-                        alignSelf: 'center',
-                        borderRadius: 30,
-                        marginTop: 30,
-                        paddingVertical: 5
-                      }}>
+                      style={[
+                        {
+                          flex: 1,
+                          paddingVertical: 20,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        },
+                      ]}>
+                      <Text style={[styles.introHeader_2, styles.centerText]}>
+                        Browse
+                    </Text>
+                      <Text note style={{ color: '#FFF' }}>
+                        Find the best quality food items
+                    </Text>
                       <View
                         style={{
-                          flex: 1,
-                          justifyContent: 'center',
-                          paddingHorizontal: 5,
+                          flexDirection: 'row',
+                          backgroundColor: 'rgba(255, 255, 255, 0.45)',
+                          width: '90%',
+                          alignSelf: 'center',
+                          borderRadius: 30,
+                          marginTop: 30,
+                          paddingVertical: 5
                         }}>
-                        <Button
-                          small
-                          transparent
-                          badge
-                          iconRight
-                          style={{height: 40}}
-                          onPress={() => navigate('Search')}>
-                          <Text
-                            style={[
-                              styles.greenText,
-                              {textTransform: 'capitalize'},
-                            ]}>
-                            Search food items
+                        <View
+                          style={{
+                            flex: 1,
+                            justifyContent: 'center',
+                            paddingHorizontal: 5,
+                          }}>
+                          <Button
+                            small
+                            transparent
+                            badge
+                            iconRight
+                            style={{ height: 40 }}
+                            onPress={() => navigate('Search')}>
+                            <Text
+                              style={[
+                                styles.greenText,
+                                { textTransform: 'capitalize' },
+                              ]}>
+                              Search food items
                           </Text>
-                          <Icon name={'ios-search'} style={styles.greenText} />
-                        </Button>
+                            <Icon name={'ios-search'} style={styles.greenText} />
+                          </Button>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                  {/* food item categories */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{
-                      flex: 1,
-                      paddingTop: 20,
-                      paddingHorizontal: 5,
-                    }}>
-                    {/* category option */}
-                    {this.state.categories.map(category => (
-                      <TouchableOpacity
-                        key={category.id}
-                        onPress={() =>
-                          navigate('Category', {
-                            category_id: category.id,
-                          })
-                        }
-                        style={{paddingHorizontal: 10, alignItems: 'center'}}>
-                        <Thumbnail
-                          circular
-                          size={50}
-                          source={require('../assets/img/tree_hand.jpg')}
-                        />
-                        <Text note numberOfLines={1}>
-                          {category.category_name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                  {/* featured farmers ends here */}
-                  <View
-                    style={{
-                      backgroundColor: '#FFF',
-                      minHeight: 500,
-                      marginTop: 30,
-                      marginLeft: 5,
-                      marginRight: 5,
-                      borderRadius: 30,
-                      bottom: -30,
-                    }}>
-                    <H3 style={{marginTop: 20, alignSelf: 'center'}}>
-                      Hand Picked
-                    </H3>
-                    {/* Hand picked items */}
-                    <List>
-                      {this.state.handPicked.map(pick => (
-                        <ListItem
-                          key={pick.id}
-                          thumbnail
+                    {/* food item categories */}
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{
+                        flex: 1,
+                        paddingTop: 20,
+                        paddingHorizontal: 5,
+                      }}>
+                      {/* category option */}
+                      {this.state.categories.map(category => (
+                        <TouchableOpacity
+                          key={category.id}
                           onPress={() =>
-                            navigate('FoodItem', {
-                              item_id: pick.id,
+                            navigate('Category', {
+                              category_id: category.id,
                             })
-                          }>
-                          <Left>
-                            <Thumbnail
-                              square
-                              style={{borderRadius: 10}}
-                              source={require('../assets/img/white_onion_leaf.jpg')}
-                            />
-                          </Left>
-                          <Body>
-                            <Text>{pick.item_name}</Text>
-                            <Text note numberOfLines={1}>
-                              {pick.description}
-                            </Text>
-                          </Body>
-                        </ListItem>
+                          }
+                          style={{ paddingHorizontal: 10, alignItems: 'center' }}>
+                          <Thumbnail
+                            circular
+                            size={50}
+                            source={require('../assets/img/tree_hand.jpg')}
+                          />
+                          <Text note numberOfLines={1}>
+                            {category.category_name}
+                          </Text>
+                        </TouchableOpacity>
                       ))}
-                    </List>
-                    {/* Hand picked items ends here */}
-
-                    {/* top picks farmers */}
-                    <View style={{marginBottom: 100}}>
-                      <H3 style={{marginTop: 20, marginLeft: 18}}>Top Picks</H3>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{
-                          flex: 1,
-                          paddingTop: 20,
-                          paddingHorizontal: 5,
-                        }}>
-                        {/* farmer item */}
-                        {this.state.topPicks.map(topPick => (
-                          <TouchableOpacity
-                            style={{
-                              paddingHorizontal: 10,
-                              alignItems: 'center',
-                              maxWidth: 100,
-                            }}>
-                            <Thumbnail
-                              circular
-                              large
-                              source={topPick.img_uri}
-                            />
-                            <Text note numberOfLines={1}>
-                              {topPick.name}
-                            </Text>
-                          </TouchableOpacity>
+                    </ScrollView>
+                    {/* featured farmers ends here */}
+                    <View
+                      style={{
+                        backgroundColor: '#FFF',
+                        minHeight: 500,
+                        marginTop: 30,
+                        marginLeft: 5,
+                        marginRight: 5,
+                        borderRadius: 30,
+                        bottom: -30,
+                      }}>
+                      <H3 style={{ marginTop: 20, alignSelf: 'center' }}>
+                        Hand Picked
+                    </H3>
+                      {/* Hand picked items */}
+                      <List>
+                        {this.state.handPicked.map(pick => (
+                          <ListItem
+                            key={pick.id}
+                            thumbnail
+                            onPress={() =>
+                              navigate('FoodItem', {
+                                item_id: pick.id,
+                              })
+                            }>
+                            <Left>
+                              <Thumbnail
+                                square
+                                style={{ borderRadius: 10 }}
+                                source={require('../assets/img/white_onion_leaf.jpg')}
+                              />
+                            </Left>
+                            <Body>
+                              <Text>{pick.item_name}</Text>
+                              <Text note numberOfLines={1}>
+                                {pick.description}
+                              </Text>
+                            </Body>
+                          </ListItem>
                         ))}
-                      </ScrollView>
+                      </List>
+                      {/* Hand picked items ends here */}
+
+                      {/* top picks farmers */}
+                      <View style={{ marginBottom: 100 }}>
+                        <H3 style={{ marginTop: 20, marginLeft: 18 }}>Top Picks</H3>
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          style={{
+                            flex: 1,
+                            paddingTop: 20,
+                            paddingHorizontal: 5,
+                          }}>
+                          {/* farmer item */}
+                          {this.state.topPicks.map(topPick => (
+                            <TouchableOpacity
+                              style={{
+                                paddingHorizontal: 10,
+                                alignItems: 'center',
+                                maxWidth: 100,
+                              }}>
+                              <Thumbnail
+                                circular
+                                large
+                                source={topPick.img_uri}
+                              />
+                              <Text note numberOfLines={1}>
+                                {topPick.name}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                      {/* top picks ends here */}
                     </View>
-                    {/* top picks ends here */}
-                  </View>
-                </ScrollView>
-              )}
+                  </ScrollView>
+                )}
             </ImageBackground>
           </View>
         </Container>

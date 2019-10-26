@@ -153,6 +153,7 @@ const TabNavs = createBottomTabNavigator(
         shadowOpacity: 0.23,
         shadowRadius: 2.62,
         elevation: 4,
+        paddingBottom: 0,
       },
       showLabel: false,
     },
