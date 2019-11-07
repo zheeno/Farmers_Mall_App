@@ -4,10 +4,30 @@ import material from '../../native-base-theme/variables/material';
 import { StyleProvider, Container, Text, View, Button, Icon } from 'native-base';
 import { ImageBackground } from 'react-native';
 import { styles } from '../../native-base-theme/variables/Styles';
+import Parse from 'parse/react-native';
 
 export default class SplashScreen extends Component {
   constructor(props) {
     super(props);
+  }
+
+  componentDidMount() {
+    let install = new Parse.Installation();
+    install.set("deviceType", navigator.userAgent);
+
+    install.save().then((resp) => {
+      console.log('Created install object', resp);
+
+      this.setState({
+        result: 'New object created with objectId: ' + resp.id
+      })
+    }, err => {
+      console.log('Error creating install object', err);
+
+      this.setState({
+        result: 'Failed to create new object, with error code: ' + err.message
+      })
+    })
   }
 
   render() {

@@ -1,5 +1,11 @@
 import { Toast } from "native-base";
 
+export function BaseUrl() {
+
+  return "http://192.168.4.113/api/buyer";
+
+}
+
 export function GetData(hash) {
   let BaseUrl = "http://192.168.4.113/api/buyer";
 

@@ -23,6 +23,7 @@ import {
   H3,
 } from 'native-base';
 import {
+  Platform,
   ImageBackground,
   ScrollView,
   TouchableOpacity,
@@ -31,9 +32,10 @@ import {
 } from 'react-native';
 import { styles } from '../../native-base-theme/variables/Styles';
 import { GetData, ShowToast } from '../services/ApiCaller';
-import { LoaderOverlay } from './components/MiscComponents';
+import { LoaderOverlay, ErrorOverlay } from './components/MiscComponents';
 import axios from 'axios';
-
+import Parse from 'parse/react-native';
+const Globals = require('../services/Globals');
 
 export default class HomeScreen extends Component {
   constructor(props) {
@@ -41,7 +43,7 @@ export default class HomeScreen extends Component {
     this.state = {
       fetching: true,
       refreshControl: false,
-      ajaxCallState: 200,
+      ajaxCallState: 404,
       ajaxCallError: null,
       categories: [],
       handPicked: [],
@@ -69,43 +71,45 @@ export default class HomeScreen extends Component {
   }
 
   componentDidMount() {
-    StackActions.reset({
-      index: 0,
-      actions: [NavigationActions.navigate({ routeName: 'Home' })],
-    });
+    // StackActions.reset({
+    //   index: 0,
+    //   actions: [NavigationActions.navigate({ routeName: 'Home' })],
+    // });
     // AsyncStorage.removeItem("cartToken");
     this.initializePage(true);
   }
 
   async initializePage(showLoader) {
     this.setState({ fetching: showLoader, refreshControl: !showLoader });
-    AsyncStorage.getItem('userId')
-      .then(userId => {
-        axios.get('/browse?user_id=' + userId)
-          .then(response => {
-            // let response = result;
-            this.setState({
-              fetching: false,
-              refreshControl: false,
-              ajaxCallState: 200,
-              ajaxCallError: null,
-              categories: response.categories,
-              handPicked: response.handPicked,
-            });
-            // console.log(response.data);
-          })
-          .catch(error => {
-            this.setState({
-              fetching: false,
-              refreshControl: false,
-              ajaxCallState: 'NET_ERR',
-              ajaxCallError: error.message,
-            });
-            ShowToast(error.message, 'danger');
-            console.log(error);
-          });
+    const idUser = await Parse.User.currentAsync();
+    // get hand picked food items
+    var FoodItems = Parse.Object.extend("FoodItems");
+    var f_query = new Parse.Query(FoodItems);
+    f_query.limit(10);
+    f_query.descending("createdAt");
+    try {
+      const foodItems = await f_query.find();
+      // get categories
+      var Categories = Parse.Object.extend("Categories");
+      var c_query = new Parse.Query(Categories);
+      const categories = await c_query.find();
+      this.setState({
+        categories: categories,
+        handPicked: foodItems,
+        fetching: false,
+        ajaxCallState: 200,
+        ajaxCallError: null,
+        refreshControl: false
+      });
+    } catch (error) {
+      this.setState({
+        ajaxCallState: 404,
+        ajaxCallError: "Connection Error. Kindly check your internet",
+        fetching: false
       })
-      .done();
+      ShowToast("Connection Error. Kindly check your internet", 'danger');
+      // return (error)
+    }
   }
 
   render() {
@@ -120,20 +124,22 @@ export default class HomeScreen extends Component {
               style={{ width: '100%', height: '100%' }}>
               {this.state.fetching ? (
                 <LoaderOverlay text={"We're preparing your screen..."} />
-              ) : (
+              ) :
+                this.state.ajaxCallState == 200 ?
                   <ScrollView
                     style={[{ flex: 1 }, styles.bgLeafGreenSlight]}
                     refreshControl={
                       <RefreshControl
                         refreshing={this.state.refreshControl}
-                        onRefresh={() => this.initializePage(false)}
+                        onRefresh={() => this.initializePage(Platform.IOS)}
                       />
                     }>
                     <View
                       style={[
                         {
                           flex: 1,
-                          paddingVertical: 20,
+                          paddingTop: 50,
+                          paddingBottom: 20,
                           justifyContent: 'center',
                           alignItems: 'center',
                         },
@@ -151,7 +157,7 @@ export default class HomeScreen extends Component {
                           width: '90%',
                           alignSelf: 'center',
                           borderRadius: 30,
-                          marginTop: 30,
+                          marginTop: 10,
                           paddingVertical: 5
                         }}>
                         <View
@@ -180,6 +186,16 @@ export default class HomeScreen extends Component {
                       </View>
                     </View>
                     {/* food item categories */}
+                    <View style={{ flexDirection: "row", padding: 10, paddingBottom: 0 }}>
+                      <View style={{ flex: 2 }}>
+                        <Text style={[styles.whiteText, { fontSize: 25 }]}>Featured Farms</Text>
+                      </View>
+                      <View style={{ flex: 1, alignItems: "flex-end", justifyContent: "center" }}>
+                        <TouchableOpacity onPress={() => navigate("Farms")}>
+                          <Text style={[styles.whiteText]}>More</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
@@ -197,15 +213,36 @@ export default class HomeScreen extends Component {
                               category_id: category.id,
                             })
                           }
-                          style={{ paddingHorizontal: 10, alignItems: 'center' }}>
-                          <Thumbnail
-                            circular
-                            size={50}
+                          style={[
+                            styles.bgLeafGreen,
+                            { margin: 2, width: 200, borderRadius: 10 },
+                          ]}>
+                          <ImageBackground
                             source={require('../assets/img/tree_hand.jpg')}
-                          />
-                          <Text note numberOfLines={1}>
-                            {category.category_name}
-                          </Text>
+                            style={{
+                              width: '100%',
+                              height: 100,
+                              borderRadius: 10,
+                              overflow: 'hidden',
+                            }}>
+                            <View
+                              style={[
+                                {
+                                  fex: 1,
+                                  justifyContent: 'flex-end',
+                                  height: '100%',
+                                  paddingHorizontal: 5,
+                                  paddingBottom: 10,
+                                },
+                                styles.maskDarkSlight,
+                              ]}>
+                              <Text
+                                numberOfLines={2}
+                                style={[styles.whiteText, { fontSize: 15 }]}>
+                                {category.get("category_name")}
+                              </Text>
+                            </View>
+                          </ImageBackground>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
@@ -242,9 +279,9 @@ export default class HomeScreen extends Component {
                               />
                             </Left>
                             <Body>
-                              <Text>{pick.item_name}</Text>
+                              <Text>{pick.get("item_name")}</Text>
                               <Text note numberOfLines={1}>
-                                {pick.description}
+                                {pick.get("item_description")}
                               </Text>
                             </Body>
                           </ListItem>
@@ -266,6 +303,7 @@ export default class HomeScreen extends Component {
                           {/* farmer item */}
                           {this.state.topPicks.map(topPick => (
                             <TouchableOpacity
+                              key={topPick.id}
                               style={{
                                 paddingHorizontal: 10,
                                 alignItems: 'center',
@@ -286,11 +324,46 @@ export default class HomeScreen extends Component {
                       {/* top picks ends here */}
                     </View>
                   </ScrollView>
-                )}
+                  :
+                  <View
+                    style={[
+                      {
+                        zIndex: 20,
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                        alignContent: 'center',
+                        aliginSelf: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(255,255,255,0.80)',
+                      },
+                    ]}>
+                    <View
+                      style={{
+                        backgroundColor: 'transparent',
+                        width: '80%',
+                        alignSelf: 'center',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}>
+                      <View style={[{ flex: 1, justifyContent: "center" }, styles.maskDarkSlight]}>
+                        <View style={{ backgroundColor: "#fff", marginHorizontal: 20, borderRadius: 20, padding: 20, alignItems: "center" }}>
+                          <View style={{ alignItems: "center", justifyContent: "center", backgroundColor: "#fafafa", height: 60, width: 60, borderRadius: 100, marginTop: -50 }}>
+                            <Icon name={"ios-info-circle-outline"} style={styles.greenText} />
+                          </View>
+                          <View style={{ flexDirection: "row", marginVertical: 10 }}>
+                            <H3 style={[styles.greenText, { alignSelf: "center", marginTop: 10 }]}>Alert</H3>
+                            <Text style={[styles.greenText, { alignSelf: "center", textAlign: "center" }]}>{this.state.ajaxCallError}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+              }
             </ImageBackground>
           </View>
         </Container>
-      </StyleProvider>
+      </StyleProvider >
     );
   }
 }

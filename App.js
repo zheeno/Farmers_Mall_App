@@ -15,6 +15,19 @@ import FoodItemScreen from './src/views/FoodItemScreen';
 import CategoryScreen from './src/views/CategoryScreen';
 import CartScreen from './src/views/CartScreen';
 import SearchScreen from './src/views/SearchScreen';
+import FarmsScreen from './src/views/FarmsScreen';
+import UserProfileScreen from './src/views/UserProfileScreen';
+import OrderListScreen from './src/views/OrderListScreen';
+import OrderScreen from './src/views/OrderScreen';
+import TransactionHistoryScreen from './src/views/TransactionHistoryScreen';
+
+import { AsyncStorage, Platform } from 'react-native';
+import Parse from 'parse/react-native';
+const Globals = require('./src/services/Globals');
+
+Parse.setAsyncStorage(AsyncStorage);
+Parse.initialize(Globals.APPLICATION_KEY, Globals.JAVASCRIPT_KEY);
+Parse.serverURL = Globals.SERVER_URL;
 
 const IntroStack = createStackNavigator(
   {
@@ -73,18 +86,34 @@ const HomeStack = createStackNavigator({
       };
     },
   },
-});
-
-const CartStack = createStackNavigator({
-  Cart: {
-    screen: CartScreen,
+  Farms: {
+    screen: FarmsScreen,
+    navigationOptions: () => {
+      return {
+        header: null,
+      };
+    },
+  },
+},
+  {
+    initialRouteName: 'Home',
     navigationOptions: {
-      title: 'Cart',
+      headerTintColor: '#010103',
       headerStyle: {
         backgroundColor: styles.bgLeafGreen.backgroundColor,
       },
       headerTintColor: '#fff',
       boxShadow: 'none',
+    },
+  });
+
+const CartStack = createStackNavigator({
+  Cart: {
+    screen: CartScreen,
+    navigationOptions: () => {
+      return {
+        header: null
+      }
     },
   },
 });
@@ -95,6 +124,62 @@ const SearchStack = createStackNavigator({
     navigationOptions: () => {
       return {
         header: null,
+      };
+    },
+  },
+});
+
+const ProfileStack = createStackNavigator({
+  UserProfile: {
+    screen: UserProfileScreen,
+    navigationOptions: () => {
+      return {
+        header: null,
+      };
+    },
+  },
+  OrderList: {
+    screen: OrderListScreen,
+    navigationOptions: () => {
+      return {
+        headerTitle: "Orders",
+        headerStyle: {
+          backgroundColor: styles.bgLeafGreen.backgroundColor,
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      };
+    },
+  },
+  Order: {
+    screen: OrderScreen,
+    navigationOptions: ({ navigation }) => {
+      return {
+        title: navigation.getParam('headerTitle', 'Order'),
+        headerStyle: {
+          backgroundColor: styles.bgLeafGreen.backgroundColor,
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      };
+    },
+  },
+  Transactions: {
+    screen: TransactionHistoryScreen,
+    navigationOptions: () => {
+      return {
+        headerTitle: "Transactions",
+        headerStyle: {
+          backgroundColor: styles.bgLeafGreen.backgroundColor,
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       };
     },
   },
@@ -120,13 +205,21 @@ const TabNavs = createBottomTabNavigator(
         ),
       },
     },
+    Profile: {
+      screen: ProfileStack,
+      navigationOptions: {
+        tabBarIcon: ({ tintColor }) => (
+          <Ionicons name={'ios-person'} size={25} color={tintColor} />
+        ),
+      },
+    },
     Cart: {
       screen: CartStack,
       navigationOptions: {
         tabBarIcon: ({ tintColor }) => (
           <Ionicons name={'ios-cart'} size={25} color={tintColor} />
         ),
-        tabBarVisible: false,
+        // tabBarVisible: false,
       },
     },
   },
@@ -137,7 +230,7 @@ const TabNavs = createBottomTabNavigator(
       indicatorStyle: {
         backgroundColor: 'yellow',
       },
-      style: {
+      style: Platform.OS === "ios" ? null : {
         backgroundColor: '#fff',
         position: 'absolute',
         left: 50,
@@ -184,6 +277,22 @@ const AllStacks = createStackNavigator({
 });
 
 export default class App extends Component {
+  _loadResourcesAsync = async () => {
+    return Promise.all([
+
+    ]);
+  };
+
+  _handleLoadingError = error => {
+    // In this case, you might want to report the error to your error
+    // reporting service, for example Sentry
+    console.warn(error);
+  };
+
+  _handleFinishLoading = () => {
+    this.setState({ isLoadingComplete: true });
+  };
+
   render() {
     return (
       <Root>

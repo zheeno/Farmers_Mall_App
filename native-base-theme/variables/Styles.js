@@ -1,4 +1,4 @@
-import {StyleSheet, Dimensions} from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 
 export const styles = StyleSheet.create({
   introHeader: {
@@ -19,6 +19,10 @@ export const styles = StyleSheet.create({
 
   maskDarkLight: {
     backgroundColor: 'rgba(6, 6, 6, 0.2)',
+  },
+
+  maskDark: {
+    backgroundColor: 'rgba(6, 6, 6, 0.50)',
   },
 
   whiteText: {

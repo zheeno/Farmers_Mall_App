@@ -1,7 +1,7 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import getTheme from '../../native-base-theme/components';
 import material from '../../native-base-theme/variables/material';
-import {StackActions, NavigationActions} from 'react-navigation';
+import { StackActions, NavigationActions } from 'react-navigation';
 import {
   StyleProvider,
   Container,
@@ -15,48 +15,162 @@ import {
   Input,
   Card,
   CardItem,
+  Spinner
 } from 'native-base';
-import {ImageBackground, Image, ScrollView, AsyncStorage} from 'react-native';
-import {styles} from '../../native-base-theme/variables/Styles';
-import {MiscModal} from './components/MiscComponents';
+import { ImageBackground, Image, ScrollView, AsyncStorage } from 'react-native';
+import { styles } from '../../native-base-theme/variables/Styles';
+import { MiscModal } from './components/MiscComponents';
+import { ShowToast } from '../services/ApiCaller';
+import Parse from 'parse/react-native';
 
 export default class LoginScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isFetching: false,
       showModal: false,
+      username: "Zheeno",
+      email: "",
+      password: "123456",
     };
+
+    this.componentDidMount = this.componentDidMount.bind(this);
+    this.onSignUp = this.onSignUp.bind(this);
+    this.onSignIn = this.onSignIn.bind(this);
+    this.updateCartTokens = this.updateCartTokens.bind(this);
   }
 
   componentDidMount() {
     StackActions.reset({
       index: 0,
-      actions: [NavigationActions.navigate({routeName: 'Login'})],
+      actions: [NavigationActions.navigate({ routeName: 'Login' })],
     });
-    this.signIn();
+    Parse.User.currentAsync().then(user => {
+      if (user !== undefined || user !== null) {
+        // do nothing
+      } else {
+        // try to log user in with current token
+        let sessionToken = user.getSessionToken();
+        Parse.User.become(sessionToken).then(object => {
+          // if session hasn't expired, grant user access
+          this.props.navigation.navigate('Home');
+        }).catch(error => {
+          // session expired
+          ShowToast('Session Expired', 'danger');
+          // this.navigateToPage('LogInStack');
+        });
+      }
+    })
   }
 
-  signIn() {
-    AsyncStorage.setItem('userId', '1');
+  // onSignIn() {
+  //   AsyncStorage.setItem('userId', '1');
+  // }
+
+  onSignIn = async () => {
+    const { navigate } = this.props.navigation;
+    let username = (this.state.username).trim(),
+      password = (this.state.password).trim();
+
+    if (username === "" || password === "") {
+      ShowToast('Fill the fields correctly.', 'danger');
+    } else {
+      this.setState({ isFetching: true });
+      try {
+        await Parse.User.logIn(username.toString(), password.toString());
+        Parse.User.enableUnsafeCurrentUser();
+        Parse.User.currentAsync().then(user => {
+          let sessionToken = user.getSessionToken();
+          AsyncStorage.setItem('sessionToken', sessionToken);
+          // check if user has any pending items in cart
+          // update those cart tokens with the latest token value
+          this.updateCartTokens(sessionToken, user.id);
+          navigate('Home');
+        }).catch(error => {
+          ShowToast(error.message, 'danger');
+        });
+        this.setState({ isFetching: false });
+      } catch (error) {
+        this.setState({ isFetching: false });
+        ShowToast("Connection Error. Kindly check your internet", 'danger');
+        return (error)
+      }
+    }
+  }
+
+  async updateCartTokens(sessionToken, userId) {
+    const CartItems = Parse.Object.extend("CartItems");
+    const query = new Parse.Query(CartItems);
+    query.equalTo("buyer_user_id", userId);
+    query.equalTo("order_placed", false);
+    query.notEqualTo("cart_token", sessionToken);
+    const results = await query.find();
+    // Do something with the returned Parse.Object values
+    for (let i = 0; i < results.length; i++) {
+      var cartItemId = results[i];
+      // update entry with new token
+      const c_query = new Parse.Query("CartItems");
+      c_query.get(cartItemId.id).then(cartItem => {
+        cartItem.set("cart_token", sessionToken);
+        cartItem.save().then(objUpdate => {
+          console.log("updated", objUpdate);
+        });
+      });
+    }
+  }
+
+  onSignUp = async () => {
+    const { navigate } = this.props.navigation;
+    let username = "zheeno";//this.state.username;
+    let email = "efezinoukpowe@gmail.com";//this.state.email;
+    let password = "123456";//this.state.password;
+
+    if (username.trim() === "" || username === undefined || email.trim() === "" || email === undefined || password.trim() === "" || password === undefined) {
+      this.setState(() => ({ nameError: `Fill the fields correctly.` }));
+    } else {
+      this.setState({ isFetching: true });
+      try {
+        Parse.User.logOut();
+        let user = new Parse.User();
+        user.set("username", username);
+        user.set("email", email);
+        user.set("password", password);
+        user.set("account_code", "001");
+        user.set("account_type", "Buyer");
+        const result = await user.signUp();
+
+        AsyncStorage.setItem('sessionToken', result.getSessionToken());
+        AsyncStorage.setItem('username', result.getUsername());
+        this.setState({ isFetching: false });
+
+        console.log("Response", user);
+        ShowToast('Account Created!', 'success');
+        navigate('Home');
+      } catch (error) {
+        this.setState({ isFetching: false });
+        console.log(error)
+        ShowToast(error.message, 'danger');
+      }
+    }
   }
 
   render() {
-    const {navigate} = this.props.navigation;
+    const { navigate } = this.props.navigation;
 
     return (
       <StyleProvider style={getTheme(material)}>
-        <Container style={{flex: 1}}>
+        <Container style={{ flex: 1 }}>
           <ImageBackground
             source={require('../assets/img/farmer_hands.png')}
-            style={{width: '100%', height: '100%'}}>
-            <View style={[styles.bgLeafGreenSlight, {flex: 1, height: '100%'}]}>
-              <View style={{flex: 1, padding: 30}}>
-                <Text style={{color: '#FFF', fontSize: 40}}>Sign In</Text>
+            style={{ width: '100%', height: '100%' }}>
+            <View style={[styles.bgLeafGreenSlight, { flex: 1, height: '100%' }]}>
+              <View style={{ flex: 1, padding: 30 }}>
+                <Text style={{ color: '#FFF', fontSize: 40 }}>Sign In</Text>
               </View>
 
-              <View style={{flex: 3, flexDirection: 'row'}}>
-                <View style={{flex: 2, paddingHorizontal: 20}}>
-                  <Form style={{width: '100%'}}>
+              <View style={{ flex: 3, flexDirection: 'row' }}>
+                <View style={{ flex: 2, paddingHorizontal: 20 }}>
+                  <Form style={{ width: '100%' }}>
                     <Item
                       floatingLabel
                       style={[
@@ -68,11 +182,12 @@ export default class LoginScreen extends Component {
                       <Input
                         style={[
                           styles.whiteText,
-                          {paddingLeft: 10, paddingRight: 30},
+                          { paddingLeft: 10, paddingRight: 30 },
                         ]}
-                        // onChangeText={text => {
-                        //   this.setState({ username: text });
-                        // }}
+                        defaultValue={this.state.username}
+                        onChangeText={text => {
+                          this.setState({ username: text });
+                        }}
                       />
                     </Item>
                     <Item
@@ -86,9 +201,10 @@ export default class LoginScreen extends Component {
                       <Input
                         secureTextEntry={true}
                         style={[styles.whiteText]}
-                        // onChangeText={text => {
-                        //   this.setState({ username: text });
-                        // }}
+                        defaultValue={this.state.password}
+                        onChangeText={text => {
+                          this.setState({ password: text });
+                        }}
                       />
                     </Item>
                     <Button
@@ -96,12 +212,16 @@ export default class LoginScreen extends Component {
                       block
                       rounded
                       light
-                      style={{marginVertical: 30, textTransform: 'capitalize'}}
-                      onPress={() => {
-                        navigate('Home');
-                      }}>
-                      <Text style={{textTransform: 'capitalize'}}>Sign In</Text>
-                      <Icon type={'fontAwesome'} name="ios-arrow-forward" />
+                      disabled={this.state.isFetching}
+                      style={{ marginVertical: 30, textTransform: 'capitalize' }}
+                      onPress={this.onSignIn}
+                    >
+                      <Text style={{ textTransform: 'capitalize' }}>Sign In</Text>
+                      {this.state.isFetching ?
+                        <Spinner size={20} color={"green"} />
+                        :
+                        <Icon type={'fontAwesome'} name="ios-arrow-forward" />
+                      }
                     </Button>
                   </Form>
                 </View>
@@ -122,15 +242,18 @@ export default class LoginScreen extends Component {
                   iconRight
                   block
                   rounded
+                  disabled={this.state.isFetching}
                   style={[
-                    {marginVertical: 10},
+                    { marginVertical: 10 },
                     styles.bgLeafGreen,
                     styles.whiteText,
                   ]}
                   onPress={() => {
-                    this.setState({showModal: true});
+                    if (!this.state.isFetching) {
+                      this.setState({ showModal: true });
+                    }
                   }}>
-                  <Text style={{textTransform: 'capitalize'}}>Sign Up</Text>
+                  <Text style={{ textTransform: 'capitalize' }}>Sign Up</Text>
                   <Icon type={'fontAwesome'} name="ios-arrow-forward" />
                 </Button>
               </View>
@@ -142,8 +265,8 @@ export default class LoginScreen extends Component {
             title={null}
             visible={this.state.showModal}
             transparent={true}
-            togModal={() => this.setState({showModal: !this.state.showModal})}>
-            <View style={[{flex: 1}, styles.maskDarkSlight]}>
+            togModal={() => this.setState({ showModal: !this.state.showModal })}>
+            <View style={[{ flex: 1 }, styles.maskDarkSlight]}>
               <View
                 style={{
                   flex: 1,
@@ -156,16 +279,16 @@ export default class LoginScreen extends Component {
                   paddingVertical: 10,
                 }}>
                 <ScrollView>
-                  <View style={{flex: 1, paddingTop: 20, paddingLeft: 20}}>
-                    <Text style={[styles.greenText, {fontSize: 25}]}>
+                  <View style={{ flex: 1, paddingTop: 20, paddingLeft: 20 }}>
+                    <Text style={[styles.greenText, { fontSize: 25 }]}>
                       Sign Up
                     </Text>
                     <Text note>
                       Join the smart network of people buying healthy food items
                     </Text>
                   </View>
-                  <View style={{flex: 2, paddingHorizontal: 20}}>
-                    <Form style={{width: '100%'}}>
+                  <View style={{ flex: 2, paddingHorizontal: 20 }}>
+                    <Form style={{ width: '100%' }}>
                       <Item
                         floatingLabel
                         style={[
@@ -177,11 +300,11 @@ export default class LoginScreen extends Component {
                         <Input
                           style={[
                             styles.greenText,
-                            {paddingLeft: 10, paddingRight: 30},
+                            { paddingLeft: 10, paddingRight: 30 },
                           ]}
                           defaultValue={this.state.regUsername}
                           onChangeText={text => {
-                            this.setState({regUsername: text});
+                            this.setState({ regUsername: text });
                           }}
                         />
                       </Item>
@@ -196,11 +319,11 @@ export default class LoginScreen extends Component {
                         <Input
                           style={[
                             styles.greenText,
-                            {paddingLeft: 10, paddingRight: 30},
+                            { paddingLeft: 10, paddingRight: 30 },
                           ]}
                           defaultValue={this.state.regFullname}
                           onChangeText={text => {
-                            this.setState({regFullname: text});
+                            this.setState({ regFullname: text });
                           }}
                         />
                       </Item>
@@ -215,11 +338,11 @@ export default class LoginScreen extends Component {
                         <Input
                           style={[
                             styles.greenText,
-                            {paddingLeft: 10, paddingRight: 30},
+                            { paddingLeft: 10, paddingRight: 30 },
                           ]}
                           defaultValue={this.state.regEmail}
                           onChangeText={text => {
-                            this.setState({regEmail: text});
+                            this.setState({ regEmail: text });
                           }}
                         />
                       </Item>
@@ -234,11 +357,11 @@ export default class LoginScreen extends Component {
                         <Input
                           style={[
                             styles.greenText,
-                            {paddingLeft: 10, paddingRight: 30},
+                            { paddingLeft: 10, paddingRight: 30 },
                           ]}
                           defaultValue={this.state.regPhone}
                           onChangeText={text => {
-                            this.setState({regPhone: text});
+                            this.setState({ regPhone: text });
                           }}
                         />
                       </Item>
@@ -253,12 +376,12 @@ export default class LoginScreen extends Component {
                         <Input
                           style={[
                             styles.greenText,
-                            {paddingLeft: 10, paddingRight: 30},
+                            { paddingLeft: 10, paddingRight: 30 },
                           ]}
                           secureTextEntry={true}
                           defaultValue={this.state.regPassword}
                           onChangeText={text => {
-                            this.setState({regPassword: text});
+                            this.setState({ regPassword: text });
                           }}
                         />
                       </Item>
@@ -267,15 +390,32 @@ export default class LoginScreen extends Component {
                         block
                         rounded
                         style={[
-                          {marginVertical: 10},
+                          { marginVertical: 10 },
                           styles.bgLeafGreen,
                           styles.whiteText,
                         ]}
                         onPress={() => {
-                          this.setState({showModal: true});
+                          this.setState({ showModal: true });
                         }}>
-                        <Text style={{textTransform: 'capitalize'}}>
+                        <Text style={{ textTransform: 'capitalize' }}>
                           Sign Up
+                        </Text>
+                        <Icon type={'fontAwesome'} name="ios-arrow-forward" />
+                      </Button>
+                      <Button
+                        iconRight
+                        block
+                        rounded
+                        light
+                        style={[
+                          { marginVertical: 10 },
+                          styles.greenText,
+                        ]}
+                        onPress={() => {
+                          this.setState({ showModal: false });
+                        }}>
+                        <Text style={{ textTransform: 'capitalize' }}>
+                          Sign In
                         </Text>
                         <Icon type={'fontAwesome'} name="ios-arrow-forward" />
                       </Button>
