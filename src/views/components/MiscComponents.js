@@ -37,7 +37,7 @@ import { styles } from '../../../native-base-theme/variables/Styles';
 
 export const CusListItem = props => {
   return (
-    <ListItem icon onPress={props.action}>
+    <ListItem icon onPress={props.action} disabled={props.disabled}>
       {props.hasIcon ?
         <Left>
           <Button style={{ backgroundColor: props.iconBgColor }}>
@@ -48,6 +48,7 @@ export const CusListItem = props => {
       <Body>
         <Text>{props.text}</Text>
       </Body>
+
       <Right>
         <Icon active name="ios-arrow-forward" />
       </Right>
@@ -117,3 +118,52 @@ export const MiscModal = props => {
     </Modal>
   );
 };
+
+export const ErrorOverlay = props => {
+  return (
+    <View
+      style={[
+        {
+          flex: 1,
+          zIndex: 20,
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          alignContent: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(255,255,255,0.80)',
+        },
+      ]}>
+      <View
+        style={{
+          backgroundColor: 'transparent',
+          width: '80%',
+          alignSelf: 'center',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+        <View style={[{ justifyContent: "center" }]}>
+          <View style={{ backgroundColor: "#f7f7f7", marginHorizontal: 5, borderRadius: 20, padding: 20, alignItems: "center" }}>
+            <View style={{ alignItems: "center", justifyContent: "center", backgroundColor: "#f7f7f7", height: 60, width: 60, borderRadius: 100, marginTop: -50 }}>
+              <Icon name={"ios-information-circle-outline"} style={styles.greenText} />
+            </View>
+            <View style={{ marginVertical: 0, minHeight: 100 }}>
+              <H3 style={[styles.greenText, { alignSelf: "center", marginTop: 10 }]}>{props.title}</H3>
+              <Text style={[styles.greenText, { fontSize: 16, alignSelf: "center", textAlign: "center" }]}>{props.errorMessage}</Text>
+              {props.action != null ?
+                <View>{}
+                  <Button
+                    onPress={props.action}
+                    iconLeft rounded
+                    style={[styles.bgLeafGreen, { alignSelf: "center", marginVertical: 10 }]}>
+                    <Icon name={"ios-refresh"} />
+                    <Text>Refresh</Text>
+                  </Button></View>
+                : null}
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}

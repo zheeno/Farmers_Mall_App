@@ -88,25 +88,9 @@ export default class FoodItemScreen extends Component {
   }
 
   async getMetaData(foodItem, token) {
-
-    // use this in the future to create a food item
-    // on the cloud server with a many-to-one
-    // relationship between the category and the food item.
-
-    // var Categories = Parse.Object.extend("Categories");
-    // var FoodItems = Parse.Object.extend("FoodItems");
-    // var category = new Categories();
-    // var foodItem = new FoodItems();
-    // category.id = "Qg1Oujq8kk";
-    // foodItem.set("item_name", "Water Yam");
-    // foodItem.set("item_description", "Fresh Water Yam");
-    // foodItem.set("parent", category);
-    // foodItem.save();
-
     // fetch selected food item's category info from cloud server
     const category = foodItem.get("parent");
     await category.fetch();
-
     // get food items from the same farm
     const FoodItems = Parse.Object.extend("FoodItems");
     const query = new Parse.Query(FoodItems);
@@ -121,6 +105,19 @@ export default class FoodItemScreen extends Component {
     await farmer.fetch();
     const full_name = farmer.get("full_name");
 
+    // get number of sales made by the farm
+    const Orders = Parse.Object.extend("Orders");
+    const o_query = new Parse.Query(Orders);
+    o_query.equalTo("farm_id", farmer.get('farm_id'));
+    o_query.equalTo("order_fulfilled", true);
+    const farmSales = await o_query.find();
+    let buyerIDs = [];
+    // get number of distinct customers who patronized the farm
+    for (i = 0; i < farmSales.length; i++) {
+      if (!buyerIDs.includes(farmSales[i].get("buyer_id"))) {
+        buyerIDs.push(farmSales[i].get("buyer_id"))
+      }
+    }
     // get cart data (this helps to know if the selected item 
     // has been added to the user's cart)
     let canBeAddedToCart = true, addedToCart = false;
@@ -153,6 +150,8 @@ export default class FoodItemScreen extends Component {
       farmer: farmer,
       category: category,
       relatedItems: relatedItems,
+      farmSales: farmSales.length,
+      customers: buyerIDs.length,
       fetching: false,
       refreshControl: false,
       ajaxCallState: 200,
@@ -411,7 +410,7 @@ export default class FoodItemScreen extends Component {
                           <Text style={{ fontWeight: 'bold', fontSize: 15 }}>
                             {this.state.farmer.get("full_name")}
                           </Text>
-                          <Text note>255k Sales&nbsp;&middot;&nbsp;100 Followers</Text>
+                          <Text note>{Number(this.state.farmSales)} Sale{this.state.farmSales > 1 ? 's' : null}&nbsp;&middot;&nbsp;{Number(this.state.customers)} Customer{this.state.customers > 1 ? 's' : null}</Text>
                         </View>
                       </View>
                       : null

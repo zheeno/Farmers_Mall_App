@@ -43,7 +43,7 @@ export default class HomeScreen extends Component {
     this.state = {
       fetching: true,
       refreshControl: false,
-      ajaxCallState: 404,
+      ajaxCallState: "NET_ERR",
       ajaxCallError: null,
       categories: [],
       handPicked: [],
@@ -103,12 +103,10 @@ export default class HomeScreen extends Component {
       });
     } catch (error) {
       this.setState({
-        ajaxCallState: 404,
-        ajaxCallError: "Connection Error. Kindly check your internet",
+        ajaxCallState: "NET_ERR",
+        ajaxCallError: Globals.ERRORS.CONNECTION,
         fetching: false
-      })
-      ShowToast("Connection Error. Kindly check your internet", 'danger');
-      // return (error)
+      });
     }
   }
 
@@ -214,17 +212,17 @@ export default class HomeScreen extends Component {
                             })
                           }
                           style={[
-                            styles.bgLeafGreen,
-                            { margin: 2, width: 200, borderRadius: 10 },
+                            { margin: 2, width: 200, borderRadius: 0, },
                           ]}>
                           <ImageBackground
                             source={require('../assets/img/tree_hand.jpg')}
-                            style={{
+                            style={[{
                               width: '100%',
                               height: 100,
-                              borderRadius: 10,
                               overflow: 'hidden',
-                            }}>
+                            }, Platform.OS == "ios" ? {
+                              borderRadius: 10
+                            } : null]}>
                             <View
                               style={[
                                 {
@@ -325,40 +323,10 @@ export default class HomeScreen extends Component {
                     </View>
                   </ScrollView>
                   :
-                  <View
-                    style={[
-                      {
-                        zIndex: 20,
-                        width: '100%',
-                        height: '100%',
-                        position: 'absolute',
-                        alignContent: 'center',
-                        aliginSelf: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: 'rgba(255,255,255,0.80)',
-                      },
-                    ]}>
-                    <View
-                      style={{
-                        backgroundColor: 'transparent',
-                        width: '80%',
-                        alignSelf: 'center',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}>
-                      <View style={[{ flex: 1, justifyContent: "center" }, styles.maskDarkSlight]}>
-                        <View style={{ backgroundColor: "#fff", marginHorizontal: 20, borderRadius: 20, padding: 20, alignItems: "center" }}>
-                          <View style={{ alignItems: "center", justifyContent: "center", backgroundColor: "#fafafa", height: 60, width: 60, borderRadius: 100, marginTop: -50 }}>
-                            <Icon name={"ios-info-circle-outline"} style={styles.greenText} />
-                          </View>
-                          <View style={{ flexDirection: "row", marginVertical: 10 }}>
-                            <H3 style={[styles.greenText, { alignSelf: "center", marginTop: 10 }]}>Alert</H3>
-                            <Text style={[styles.greenText, { alignSelf: "center", textAlign: "center" }]}>{this.state.ajaxCallError}</Text>
-                          </View>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
+                  <ErrorOverlay
+                    title={"Notification"}
+                    errorMessage={this.state.ajaxCallError}
+                    action={() => this.initializePage(true)} />
               }
             </ImageBackground>
           </View>

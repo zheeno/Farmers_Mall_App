@@ -17,11 +17,12 @@ import {
   CardItem,
   Spinner
 } from 'native-base';
-import { ImageBackground, Image, ScrollView, AsyncStorage } from 'react-native';
+import { ImageBackground, Image, ScrollView } from 'react-native';
 import { styles } from '../../native-base-theme/variables/Styles';
 import { MiscModal } from './components/MiscComponents';
 import { ShowToast } from '../services/ApiCaller';
 import Parse from 'parse/react-native';
+const Globals = require("../services/Globals");
 
 export default class LoginScreen extends Component {
   constructor(props) {
@@ -45,33 +46,15 @@ export default class LoginScreen extends Component {
       index: 0,
       actions: [NavigationActions.navigate({ routeName: 'Login' })],
     });
-    Parse.User.currentAsync().then(user => {
-      if (user !== undefined || user !== null) {
-        // do nothing
-      } else {
-        // try to log user in with current token
-        let sessionToken = user.getSessionToken();
-        Parse.User.become(sessionToken).then(object => {
-          // if session hasn't expired, grant user access
-          this.props.navigation.navigate('Home');
-        }).catch(error => {
-          // session expired
-          ShowToast('Session Expired', 'danger');
-          // this.navigateToPage('LogInStack');
-        });
-      }
-    })
   }
 
-  // onSignIn() {
-  //   AsyncStorage.setItem('userId', '1');
-  // }
 
   onSignIn = async () => {
     const { navigate } = this.props.navigation;
     let username = (this.state.username).trim(),
       password = (this.state.password).trim();
 
+    // navigate('Home');
     if (username === "" || password === "") {
       ShowToast('Fill the fields correctly.', 'danger');
     } else {
@@ -81,7 +64,6 @@ export default class LoginScreen extends Component {
         Parse.User.enableUnsafeCurrentUser();
         Parse.User.currentAsync().then(user => {
           let sessionToken = user.getSessionToken();
-          AsyncStorage.setItem('sessionToken', sessionToken);
           // check if user has any pending items in cart
           // update those cart tokens with the latest token value
           this.updateCartTokens(sessionToken, user.id);
@@ -92,38 +74,42 @@ export default class LoginScreen extends Component {
         this.setState({ isFetching: false });
       } catch (error) {
         this.setState({ isFetching: false });
-        ShowToast("Connection Error. Kindly check your internet", 'danger');
-        return (error)
+        ShowToast(error.message, 'danger');
+        // ShowToast(Globals.ERRORS.INTERNET_CON, 'danger');
       }
     }
   }
 
   async updateCartTokens(sessionToken, userId) {
-    const CartItems = Parse.Object.extend("CartItems");
-    const query = new Parse.Query(CartItems);
-    query.equalTo("buyer_user_id", userId);
-    query.equalTo("order_placed", false);
-    query.notEqualTo("cart_token", sessionToken);
-    const results = await query.find();
-    // Do something with the returned Parse.Object values
-    for (let i = 0; i < results.length; i++) {
-      var cartItemId = results[i];
-      // update entry with new token
-      const c_query = new Parse.Query("CartItems");
-      c_query.get(cartItemId.id).then(cartItem => {
-        cartItem.set("cart_token", sessionToken);
-        cartItem.save().then(objUpdate => {
-          console.log("updated", objUpdate);
+    try {
+      const CartItems = Parse.Object.extend("CartItems");
+      const query = new Parse.Query(CartItems);
+      query.equalTo("buyer_user_id", userId);
+      query.equalTo("order_placed", false);
+      query.notEqualTo("cart_token", sessionToken);
+      const results = await query.find();
+      // Do something with the returned Parse.Object values
+      for (let i = 0; i < results.length; i++) {
+        var cartItemId = results[i];
+        // update entry with new token
+        const c_query = new Parse.Query("CartItems");
+        c_query.get(cartItemId.id).then(cartItem => {
+          cartItem.set("cart_token", sessionToken);
+          cartItem.save().then(objUpdate => {
+            console.log("updated", objUpdate);
+          });
         });
-      });
+      }
+    } catch (error) {
+      ShowToast(Globals.ERRORS.INTERNET_CON, "danger")
     }
   }
 
   onSignUp = async () => {
     const { navigate } = this.props.navigation;
-    let username = "zheeno";//this.state.username;
-    let email = "efezinoukpowe@gmail.com";//this.state.email;
-    let password = "123456";//this.state.password;
+    let username = this.state.regUsername;//this.state.username;
+    let email = this.state.regEmail;//this.state.email;
+    let password = this.state.regPassword;//this.state.password;
 
     if (username.trim() === "" || username === undefined || email.trim() === "" || email === undefined || password.trim() === "" || password === undefined) {
       this.setState(() => ({ nameError: `Fill the fields correctly.` }));
@@ -135,20 +121,19 @@ export default class LoginScreen extends Component {
         user.set("username", username);
         user.set("email", email);
         user.set("password", password);
+        user.set("full_name", this.state.regFullname);
+        user.set("phone_no", this.state.regPhone);
         user.set("account_code", "001");
         user.set("account_type", "Buyer");
         const result = await user.signUp();
+        this.setState({ isFetching: false, showModal: false, username: username, password: password });
 
-        AsyncStorage.setItem('sessionToken', result.getSessionToken());
-        AsyncStorage.setItem('username', result.getUsername());
-        this.setState({ isFetching: false });
-
-        console.log("Response", user);
         ShowToast('Account Created!', 'success');
-        navigate('Home');
+        // sign user in
+        Parse.User.logOut();
+        this.onSignIn();
       } catch (error) {
-        this.setState({ isFetching: false });
-        console.log(error)
+        this.setState({ isFetching: false, showModal: false });
         ShowToast(error.message, 'danger');
       }
     }
@@ -389,24 +374,26 @@ export default class LoginScreen extends Component {
                         iconRight
                         block
                         rounded
+                        disabled={this.state.isFetching}
                         style={[
                           { marginVertical: 10 },
                           styles.bgLeafGreen,
                           styles.whiteText,
                         ]}
-                        onPress={() => {
-                          this.setState({ showModal: true });
-                        }}>
+                        onPress={this.onSignUp}>
                         <Text style={{ textTransform: 'capitalize' }}>
                           Sign Up
                         </Text>
-                        <Icon type={'fontAwesome'} name="ios-arrow-forward" />
+                        {this.state.isFetching ? <Spinner size={20} color={"white"} /> :
+                          <Icon type={'fontAwesome'} name="ios-arrow-forward" />
+                        }
                       </Button>
                       <Button
                         iconRight
                         block
                         rounded
                         light
+                        disabled={this.state.isFetching}
                         style={[
                           { marginVertical: 10 },
                           styles.greenText,

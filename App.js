@@ -6,7 +6,7 @@ import React, { Component } from 'react';
 import { createStackNavigator } from 'react-navigation';
 import { createBottomTabNavigator, BottomTabBar } from 'react-navigation-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { Root, Button, Icon, View, Text } from 'native-base';
+import { Root, Button, Icon, View, Text, Thumbnail } from 'native-base';
 import { styles } from './native-base-theme/variables/Styles';
 import SplashScreen from './src/views/SplashScreen';
 import LoginScreen from './src/views/LoginScreen';
@@ -21,14 +21,15 @@ import OrderListScreen from './src/views/OrderListScreen';
 import OrderScreen from './src/views/OrderScreen';
 import TransactionHistoryScreen from './src/views/TransactionHistoryScreen';
 
-import { AsyncStorage, Platform } from 'react-native';
-import Parse from 'parse/react-native';
+import { AsyncStorage, Platform, TouchableOpacity } from 'react-native';
+// import Parse from 'parse/react-native';
 const Globals = require('./src/services/Globals');
 
-Parse.setAsyncStorage(AsyncStorage);
-Parse.initialize(Globals.APPLICATION_KEY, Globals.JAVASCRIPT_KEY);
-Parse.serverURL = Globals.SERVER_URL;
+// Parse.setAsyncStorage(AsyncStorage);
+// Parse.initialize(Globals.APPLICATION_KEY, Globals.JAVASCRIPT_KEY);
+// Parse.serverURL = Globals.SERVER_URL;
 
+// IntroStack
 const IntroStack = createStackNavigator(
   {
     Splash: {
@@ -61,6 +62,7 @@ const IntroStack = createStackNavigator(
   },
 );
 
+// HomeStack
 const HomeStack = createStackNavigator({
   Home: {
     screen: HomeScreen,
@@ -107,17 +109,41 @@ const HomeStack = createStackNavigator({
     },
   });
 
+// CartStack
 const CartStack = createStackNavigator({
   Cart: {
     screen: CartScreen,
-    navigationOptions: () => {
+    navigationOptions: ({ navigation }) => {
       return {
-        header: null
-      }
+        headerLeft:
+          <Button
+            style={[styles.bgLeafGreen]}
+            small
+            onPress={navigation.getParam('goHome')}>
+            <Icon name={"ios-arrow-back"} />
+          </Button>,
+        title: "Cart",
+        headerRight:
+          <Button
+            style={[styles.bgLeafGreen]}
+            small
+            icon
+            onPress={navigation.getParam('checkout')}>
+            <Icon name={"ios-checkmark-circle-outline"} />
+          </Button>,
+        headerStyle: {
+          backgroundColor: styles.bgLeafGreen.backgroundColor,
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      };
     },
   },
 });
 
+// SearchStack
 const SearchStack = createStackNavigator({
   SearchResult: {
     screen: SearchScreen,
@@ -129,12 +155,45 @@ const SearchStack = createStackNavigator({
   },
 });
 
+// ProfileStack
 const ProfileStack = createStackNavigator({
   UserProfile: {
     screen: UserProfileScreen,
-    navigationOptions: () => {
+    navigationOptions: ({ navigation }) => {
       return {
-        header: null,
+        headerLeft: null,
+        headerTitle:
+          <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center", paddingVertical: 10 }}>
+            <View style={{ flex: 1, flexDirection: "row", justifyContent: "center" }}>
+              <View style={{ flex: 1 }}>
+                <TouchableOpacity
+                  style={[styles.bgLeafGreen, { alignItems: "center", justifyContent: "center", height: "100%" }]}
+                  small
+                  onPress={navigation.getParam('goHome')}>
+                  <Icon name={"ios-arrow-back"} style={[styles.whiteText, { fontSize: 20 }]} />
+                </TouchableOpacity>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Thumbnail
+                  circular
+                  small
+                  source={navigation.getParam('headerAvatar', '')}
+                />
+              </View>
+            </View>
+            <View style={{ flex: 3, alignItems: "flex-start", justifyContent: "center" }}>
+              <Text numberOfLines={1} style={[styles.whiteText, { fontSize: 16 }]}>{navigation.getParam('headerTitle', 'Profile')}</Text>
+              <Text numberOfLines={1} note>{navigation.getParam('headerSubTitle', '')}</Text>
+            </View>
+          </View>,
+        headerRight: null,
+        headerStyle: {
+          backgroundColor: styles.bgLeafGreen.backgroundColor,
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       };
     },
   },
@@ -211,6 +270,7 @@ const TabNavs = createBottomTabNavigator(
         tabBarIcon: ({ tintColor }) => (
           <Ionicons name={'ios-person'} size={25} color={tintColor} />
         ),
+        tabBarVisible: false,
       },
     },
     Cart: {

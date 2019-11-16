@@ -11,6 +11,10 @@ import {
     H1,
     Form,
     Input,
+    Header,
+    Left,
+    Body,
+    Right,
 } from 'native-base';
 import {
     ImageBackground,
@@ -69,7 +73,7 @@ export default class FarmsScreen extends Component {
                     <LoaderOverlay text={"We're looking up farms..."} />
                 ) : (
                         <Container style={{ flex: 1, backgroundColor: '#FFF' }}>
-                            <View style={{ flex: 1 }}>
+                            <View style={{ flex: 2 }}>
                                 <ImageBackground
                                     source={require('../assets/img/close_up_green_leaf.jpg')}
                                     style={{ width: '100%', flex: 1 }}
@@ -77,20 +81,36 @@ export default class FarmsScreen extends Component {
                                         resizeMode: "cover",
                                         alignSelf: "center"
                                     }}>
+                                    <Header transparent style={[styles.maskDark]}>
+                                        <Left style={{ flex: 1 }}>
+                                            <TouchableOpacity style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+                                                onPress={() => this.props.navigation.goBack(null)}
+                                            >
+                                                <Icon name={"ios-arrow-back"} style={styles.whiteText} />
+                                            </TouchableOpacity>
+                                        </Left>
+                                        <Body style={{ flex: 4, flexDirection: "row" }}>
+                                            <Icon style={styles.whiteText} name={"ios-leaf"} />
+                                            <Text style={[styles.whiteText, { fontSize: 20, margin: 5 }]} numberOfLines={1}>
+                                                Farms</Text>
+                                        </Body>
+                                        <Right style={{ flex: 1 }} />
+                                    </Header>
                                     <View
                                         style={[
                                             styles.maskDarkSlight,
-                                            { flex: 1, justifyContent: 'center' },
+                                            { flex: 1, }
                                         ]}>
                                         <View
                                             style={{
+                                                flex: 1,
                                                 marginLeft: 30,
-                                                paddingVertical: 20,
+                                                justifyContent: 'flex-start'
                                             }}>
-                                            <H1 style={styles.whiteText} numberOfLines={1}>
+                                            {/* <H1 style={styles.whiteText} numberOfLines={1}>
                                                 <Icon name={"ios-leaf"} style={styles.whiteText} />
                                                 &nbsp;Farms
-                                            </H1>
+                                            </H1> */}
                                             <Text style={styles.whiteText}>Get direct access to the farmers {"\n"}and their produce</Text>
                                         </View>
                                     </View>
@@ -150,7 +170,7 @@ export default class FarmsScreen extends Component {
                   </Text>
                                     </View>
                                 ) : (
-                                        <ScrollView style={{ paddingBottom: 50 }}>
+                                        <View style={{ paddingBottom: 50 }}>
                                             <FlatList
                                                 data={this.state.farms}
                                                 numColumns={1}
@@ -194,7 +214,7 @@ export default class FarmsScreen extends Component {
                                                     </TouchableOpacity>
                                                 )}
                                             />
-                                        </ScrollView>
+                                        </View>
                                     )}
                             </View>
                         </Container>

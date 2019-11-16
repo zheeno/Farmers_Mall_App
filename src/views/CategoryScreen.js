@@ -14,6 +14,7 @@ import {
   Thumbnail,
   Header,
   Left,
+  Right,
   Body
 } from 'native-base';
 import {
@@ -22,6 +23,7 @@ import {
   FlatList,
   TouchableOpacity,
   AsyncStorage,
+  Platform,
 } from 'react-native';
 import { styles } from '../../native-base-theme/variables/Styles';
 import { GetData, ShowToast } from '../services/ApiCaller';
@@ -100,32 +102,39 @@ export default class CategoryScreen extends Component {
           <LoaderOverlay text={"We're getting the items ready..."} />
         ) : (
             <Container style={{ flex: 1, backgroundColor: '#eee' }}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 2 }}>
                 <ImageBackground
                   source={require('../assets/img/veges_mix.jpg')}
-                  style={{ width: '100%', flex: 1 }}>
+                  style={{ width: '100%', flex: 1, }}>
                   <Header transparent style={[styles.maskDark,]}>
-                    <Left>
+                    <Left style={{ flex: 1 }}>
                       <TouchableOpacity style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
                         onPress={() => this.props.navigation.goBack(null)}
                       >
                         <Icon name={"ios-arrow-back"} style={styles.whiteText} />
                       </TouchableOpacity>
                     </Left>
-                    <Body />
+                    <Body style={{ flex: 4, flexDirection: "row" }}>
+                      <Icon style={styles.whiteText} name={"ios-leaf"} />
+                      <Text style={[styles.whiteText, { fontSize: 20, margin: 5 }]} numberOfLines={1}>
+                        Farms
+                      </Text>
+                    </Body>
+                    <Right style={{ flex: 1 }} />
                   </Header>
                   <View
                     style={[
                       styles.maskDark,
-                      { flex: 1, justifyContent: 'center' },
+                      { flex: 1, justifyContent: 'flex-start', paddingTop: 10 },
                     ]}>
                     <View
                       style={{
+                        flex: 1,
                         marginLeft: 30,
                         borderLeftWidth: 4,
                         borderLeftColor: '#FFF',
                         paddingLeft: 10,
-                        marginTop: -40,
+                        marginBottom: 60
                       }}>
                       <H1 style={styles.whiteText} numberOfLines={1}>
                         {this.state.category.get("category_name")}
@@ -221,46 +230,46 @@ export default class CategoryScreen extends Component {
                     // <ScrollView>
                     <FlatList
                       data={this.state.foodItems}
-                      numColumns={3}
+                      numColumns={2}
                       renderItem={({ item, index }) => (
-                        <TouchableOpacity
-                          key={item.id}
-                          onPress={() =>
-                            navigate('FoodItem', {
-                              item_id: item.id,
-                            })
-                          }
-                          style={[
-                            styles.bgLeafGreen,
-                            { margin: 2, flex: 1, borderRadius: 10 },
-                          ]}>
-                          <ImageBackground
-                            source={require('../assets/img/white_onion_leaf.jpg')}
-                            style={{
-                              width: '100%',
-                              height: 100,
-                              borderRadius: 10,
-                              overflow: 'hidden',
-                            }}>
-                            <View
-                              style={[
-                                {
-                                  fex: 1,
-                                  justifyContent: 'flex-end',
-                                  height: '100%',
-                                  paddingHorizontal: 5,
-                                  paddingBottom: 10,
-                                },
-                                styles.maskDarkSlight,
-                              ]}>
-                              <Text
-                                numberOfLines={2}
-                                style={[styles.whiteText, { fontSize: 13 }]}>
-                                {item.get("item_name")}
-                              </Text>
-                            </View>
-                          </ImageBackground>
-                        </TouchableOpacity>
+                        <View style={[
+                          { margin: 2, flex: 1, borderRadius: 10 },
+                        ]}>
+                          <TouchableOpacity
+                            key={item.id}
+                            onPress={() =>
+                              navigate('FoodItem', {
+                                item_id: item.id,
+                              })
+                            }
+                          >
+                            <ImageBackground
+                              source={require('../assets/img/white_onion_leaf.jpg')}
+                              style={[{
+                                width: '100%',
+                                height: 100,
+                                overflow: 'hidden',
+                              }, Platform.OS == "ios" ? { borderRadius: 10 } : null]}>
+                              <View
+                                style={[
+                                  {
+                                    fex: 1,
+                                    justifyContent: 'flex-end',
+                                    height: '100%',
+                                    paddingHorizontal: 5,
+                                    paddingBottom: 10,
+                                  },
+                                  styles.maskDarkSlight,
+                                ]}>
+                                <Text
+                                  numberOfLines={2}
+                                  style={[styles.whiteText, { fontSize: 13 }]}>
+                                  {item.get("item_name")}
+                                </Text>
+                              </View>
+                            </ImageBackground>
+                          </TouchableOpacity>
+                        </View>
                       )}
                     />
                     // </ScrollView>
