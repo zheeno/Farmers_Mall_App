@@ -354,7 +354,8 @@ export default class OrderScreen extends Component {
                                                                 : null
                                                         }
                                                         {/* display button to confirm delivery */}
-                                                        {this.state.order.get("order_fulfilled") && !this.state.order.get("order_received") && !this.state.order.get("order_rejected") ?
+                                                        {this.state.order.get("order_fulfilled") && !this.state.order.get("order_received") &&
+                                                            !this.state.order.get("order_rejected") ?
                                                             <View style={{ flexDirection: "row", marginTop: 5 }}>
                                                                 <View style={{ flex: 1, padding: 5 }}>
                                                                     <Button block rounded light iconRight onPress={() => this.receiveOrDeclineOrder(false)}>

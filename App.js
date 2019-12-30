@@ -19,6 +19,7 @@ import FarmsScreen from './src/views/FarmsScreen';
 import UserProfileScreen from './src/views/UserProfileScreen';
 import OrderListScreen from './src/views/OrderListScreen';
 import OrderScreen from './src/views/OrderScreen';
+import TestScreen from './src/views/TestScreen';
 import TransactionHistoryScreen from './src/views/TransactionHistoryScreen';
 
 import { AsyncStorage, Platform, TouchableOpacity } from 'react-native';
@@ -70,6 +71,7 @@ const HomeStack = createStackNavigator({
       return {
         header: null,
       };
+
     },
   },
   FoodItem: {
@@ -254,6 +256,7 @@ const TabNavs = createBottomTabNavigator(
         tabBarIcon: ({ tintColor }) => (
           <Ionicons name={'ios-paper'} size={25} color={tintColor} />
         ),
+        // tabBarVisible: true,
       },
     },
     Search: {

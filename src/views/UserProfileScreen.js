@@ -13,6 +13,7 @@ import { styles } from '../../native-base-theme/variables/Styles';
 import Parse from 'parse/react-native';
 import { CusListItem } from './components/MiscComponents';
 import { ShowToast } from '../services/ApiCaller';
+import ImagePickerIOS from "@react-native-community/image-picker-ios";
 
 const Globals = require('../services/Globals');
 var ImagePicker = require('react-native-image-picker');
@@ -154,7 +155,18 @@ export default class UserProfileScreen extends Component {
                 }
             });
         } else {
-            alert("Not Supportted")
+            // ImagePickerIOS.openCameraDialog({
+            //     showImages: true,
+            //     showVideos: false
+            // }, (imageUrl, height, width) => {
+            //     // success
+            //     alert(imageUrl)
+            // }, (error) => {
+            //     // cancel
+            // });
+            ImagePickerIOS.canUseCamera(canUseCamera => {
+                alert("canUseCamera" + canUseCamera);
+            });
         }
     }
     async uploadProfilePic() {

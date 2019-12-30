@@ -54,7 +54,7 @@ export default class LoginScreen extends Component {
     let username = (this.state.username).trim(),
       password = (this.state.password).trim();
 
-    // navigate('Home');
+    navigate('Home');
     if (username === "" || password === "") {
       ShowToast('Fill the fields correctly.', 'danger');
     } else {

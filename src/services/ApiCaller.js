@@ -8,7 +8,6 @@ export function BaseUrl() {
 
 export function GetData(hash) {
   let BaseUrl = "http://192.168.4.113/api/buyer";
-
   return new Promise((resolve, reject) => {
     fetch(BaseUrl + hash, {
       method: "GET"

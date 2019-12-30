@@ -41,6 +41,16 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  bgWhite: {
+    backgroundColor: "white"
+  },
+
+  myButt: {
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+
   bgLeafGreen: {
     backgroundColor: 'rgb(14, 46, 47)',
   },
